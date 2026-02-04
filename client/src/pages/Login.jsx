@@ -5,14 +5,17 @@ import GoogleSvg from "../assets/icons8-google.svg";
 import { FaEye } from "react-icons/fa6";
 import { FaEyeSlash } from "react-icons/fa6";
 import "../styles/Login.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const API_BASE = "http://localhost:3000/api/v1";
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [ token, setToken ] = useState(JSON.parse(localStorage.getItem("auth")) || "");
+  const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
 
 
@@ -28,7 +31,7 @@ const Login = () => {
       };
       try {
         const response = await axios.post(
-          "http://localhost:3000/api/v1/login",
+          `${API_BASE}/login`,
           formData
         );
         localStorage.setItem('auth', JSON.stringify(response.data.token));
@@ -43,8 +46,29 @@ const Login = () => {
     }
   };
 
+  // Handle OAuth callback: token or error in URL
   useEffect(() => {
-    if(token !== ""){
+    const urlToken = searchParams.get("token");
+    const urlError = searchParams.get("error");
+    if (urlToken) {
+      localStorage.setItem("auth", JSON.stringify(urlToken));
+      setSearchParams({});
+      toast.success("Login successful");
+      navigate("/dashboard");
+      return;
+    }
+    if (urlError) {
+      setSearchParams({});
+      const msg =
+        urlError === "no_email"
+          ? "Google account has no email"
+          : "Google sign-in failed. Please try again.";
+      toast.error(msg);
+    }
+  }, [searchParams, navigate, setSearchParams]);
+
+  useEffect(() => {
+    if (token !== "") {
       toast.success("You already logged in");
       navigate("/dashboard");
     }
@@ -99,8 +123,14 @@ const Login = () => {
               </div>
               <div className="login-center-buttons">
                 <button type="submit">Log In</button>
-                <button type="submit">
-                  <img src={GoogleSvg} alt="" />
+                <button
+                  type="button"
+                  className="google-btn"
+                  onClick={() => {
+                    window.location.href = `${API_BASE}/auth/google`;
+                  }}
+                >
+                    <img src={GoogleSvg} alt="" />
                   Log In with Google
                 </button>
               </div>

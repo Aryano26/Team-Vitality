@@ -23,15 +23,17 @@ const UserSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Please provide password'],
-        minlength: 3
+        required: false, // Optional for OAuth users (e.g., Google sign-in)
+        minlength: 3,
+        default: null
     },
 });
 
-UserSchema.pre("save", async function(){
+UserSchema.pre("save", async function () {
+    if (!this.isModified("password") || !this.password) return;
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-})
+});
 
 
 
