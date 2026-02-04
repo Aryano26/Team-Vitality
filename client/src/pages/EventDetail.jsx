@@ -18,6 +18,9 @@ const EventDetail = () => {
   const [depositing, setDepositing] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [joiningCategory, setJoiningCategory] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [creatingExpense, setCreatingExpense] = useState(false);
+  const [settling, setSettling] = useState(false);
 
   const fetchEvent = async () => {
     try {
@@ -62,12 +65,22 @@ const EventDetail = () => {
     }
   };
 
+  const fetchSummary = async () => {
+    try {
+      const { data } = await api.get(`/events/${id}/summary`);
+      setSummary(data);
+    } catch {
+      setSummary(null);
+    }
+  };
+
   const loadAll = async () => {
     setLoading(true);
     await fetchEvent();
     await fetchWallet();
     await fetchTransactions();
     await fetchCategories();
+    await fetchSummary();
     setLoading(false);
   };
 
@@ -158,10 +171,63 @@ const EventDetail = () => {
       e.target.amount.value = "";
       await fetchWallet();
       await fetchTransactions();
+      await fetchSummary();
     } catch (err) {
       toast.error(err.response?.data?.msg || err.response?.data?.error || "Deposit failed");
     } finally {
       setDepositing(false);
+    }
+  };
+
+  const handleCreateExpense = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const amount = parseFloat(form.amount.value);
+    const categoryId = form.categoryId.value || null;
+    const description = form.description.value?.trim() || "";
+    const receiptImageUrl = form.receiptImageUrl.value?.trim() || "";
+
+    if (!amount || amount <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+
+    setCreatingExpense(true);
+    try {
+      await api.post(`/events/${id}/expenses`, {
+        amount,
+        categoryId,
+        description,
+        receiptImageUrl,
+      });
+      toast.success("Expense recorded from shared wallet");
+      form.reset();
+      await fetchWallet();
+      await fetchTransactions();
+      await fetchCategories();
+      await fetchSummary();
+    } catch (err) {
+      toast.error(err.response?.data?.msg || err.response?.data?.error || "Failed to create expense");
+    } finally {
+      setCreatingExpense(false);
+    }
+  };
+
+  const handleSettleEvent = async () => {
+    if (!window.confirm("Settle this event? This will calculate final shares for all participants.")) {
+      return;
+    }
+    setSettling(true);
+    try {
+      const { data } = await api.post(`/events/${id}/settle`);
+      toast.success("Event settled. Final shares calculated.");
+      await fetchEvent();
+      await fetchSummary();
+      setEvent((prev) => (prev ? { ...prev, status: data.status } : prev));
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to settle event");
+    } finally {
+      setSettling(false);
     }
   };
 
@@ -231,6 +297,43 @@ const EventDetail = () => {
             </form>
           )}
         </div>
+
+        {event.status === "active" && (
+          <div className="expenses-section">
+            <h3>Pay from shared basket</h3>
+            <form className="expense-form" onSubmit={handleCreateExpense}>
+              <input
+                type="number"
+                name="amount"
+                placeholder="Expense amount"
+                min="0.01"
+                step="0.01"
+                required
+              />
+              <select name="categoryId">
+                <option value="">No specific category</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                name="description"
+                placeholder="Description (optional)"
+              />
+              <input
+                type="text"
+                name="receiptImageUrl"
+                placeholder="Receipt image URL (optional)"
+              />
+              <button type="submit" disabled={creatingExpense}>
+                {creatingExpense ? "Saving..." : "Add Expense"}
+              </button>
+            </form>
+          </div>
+        )}
 
         <div className="categories-section">
           <h3>Expense Categories</h3>
@@ -311,6 +414,61 @@ const EventDetail = () => {
             </ul>
           )}
         </div>
+
+        {summary && (
+          <div className="summary-section">
+            <h3>Participants overview</h3>
+            {summary.participants && summary.participants.length > 0 ? (
+              <table className="summary-table">
+                <thead>
+                  <tr>
+                    <th>Participant</th>
+                    <th>Deposited</th>
+                    <th>Spent</th>
+                    <th>Net</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.participants.map((p) => (
+                    <tr key={p.userId}>
+                      <td>
+                        {p.name} ({p.email})
+                      </td>
+                      <td>{p.totalDeposits.toFixed(2)} {summary.wallet?.currency || event.currency}</td>
+                      <td>{p.totalExpenses.toFixed(2)} {summary.wallet?.currency || event.currency}</td>
+                      <td>{p.net.toFixed(2)} {summary.wallet?.currency || event.currency}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No participant activity yet.</p>
+            )}
+
+            <div className="settlement-section">
+              <h4>Settlement</h4>
+              {summary.settlementSummary ? (
+                <p>
+                  Settlement status: {summary.settlementSummary.status}.{" "}
+                  {summary.settlementSummary.calculatedAt &&
+                    `Calculated at ${new Date(summary.settlementSummary.calculatedAt).toLocaleString()}`}
+                </p>
+              ) : (
+                <p>Event has not been settled yet.</p>
+              )}
+              {user && event.createdBy && event.createdBy._id === user._id && event.status !== "settled" && (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleSettleEvent}
+                  disabled={settling}
+                >
+                  {settling ? "Settling..." : "Settle Event"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

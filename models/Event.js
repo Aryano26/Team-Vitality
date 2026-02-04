@@ -35,6 +35,39 @@ const EventSchema = new mongoose.Schema(
       default: "active",
     },
     currency: { type: String, default: "USD" },
+    // High-level payment / authorization rules for this event.
+    paymentRules: {
+      allowedPayerRoles: {
+        type: [String],
+        default: ["creator", "member"], // who may create expenses
+      },
+      requireCategoryParticipation: {
+        type: Boolean,
+        default: true, // must have joined category to spend from it
+      },
+      maxExpensePerCategory: {
+        type: Number,
+        default: null, // optional hard limit per category
+        min: 0,
+      },
+    },
+    // Cached settlement summary once event is settled.
+    settlementSummary: {
+      status: {
+        type: String,
+        enum: ["pending", "calculated", "refunded"],
+        default: "pending",
+      },
+      calculatedAt: { type: Date },
+      perParticipant: [
+        {
+          userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          totalDeposits: { type: Number, default: 0 },
+          totalExpenses: { type: Number, default: 0 },
+          net: { type: Number, default: 0 }, // positive => should receive refund, negative => should pay
+        },
+      ],
+    },
   },
   { timestamps: true }
 );
