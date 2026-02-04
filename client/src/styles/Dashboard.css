@@ -1,47 +1,72 @@
-.dashboard-main{
-    font-size: 30px;
-    height: 100vh;
-    width: 100%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+.dashboard-main {
+  font-size: 30px;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  animation: pageFadeIn 0.4s ease-out;
 }
 
-.dashboard-main p{
+.dashboard-main h1 {
+  animation: slideUp 0.5s ease-out;
+}
+
+.dashboard-main p {
   font-size: 20px;
-  padding: 0 20px
+  padding: 0 20px;
+  color: var(--text-secondary);
+  animation: slideUp 0.5s ease-out 0.1s both;
 }
 
 .dashboard-links {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: slideUp 0.5s ease-out 0.2s both;
 }
 
-.logout-button{
-    background: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
+.logout-button {
+  background: var(--accent);
+  color: white;
+  border: 2px solid var(--accent);
+  width: 500px;
+  max-width: 90vw;
+  padding: 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+  font-size: 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-smooth),
+    background var(--transition-fast);
+}
 
-    width: 500px;
-    padding: 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-    margin-top: 10px;
+.logout-button:hover {
+  background: var(--accent-hover);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--accent-glow);
+}
 
-    font-size: 20px;
-    text-align: center;
-    text-decoration: none;
+.logout-button:active {
+  transform: translateY(0);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
-
-  
-  .logout-button:hover{
-    color: #333;
-    background-color: white;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}

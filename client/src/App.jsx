@@ -44,7 +44,7 @@ function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router} />
-      <ToastContainer position="top-center" />
+      <ToastContainer position="top-center" theme="dark" />
     </AuthProvider>
   );
 }

@@ -1,62 +1,93 @@
-.landing-main{
-    font-size: 30px;
-    height: 100vh;
-    width: 100%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+.landing-main {
+  font-size: 30px;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
 }
 
-.landing-login-button{
-    background: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
+.landing-main::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 0%,
+    var(--accent-glow) 0%,
+    transparent 55%
+  );
+  pointer-events: none;
+  animation: landingGlow 8s ease-in-out infinite alternate;
+}
 
-    width: 500px;
-    padding: 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-    margin-top: 10px;
-
-    font-size: 20px;
-    text-align: center;
-    text-decoration: none;
+@keyframes landingGlow {
+  from {
+    opacity: 0.4;
+    transform: scale(1);
   }
-
-  .landing-register-button{
-    background: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
-
-    width: 500px;
-    padding: 16px;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-    margin-top: 10px;
-
-    font-size: 20px;
-    text-align: center;
-    text-decoration: none;
+  to {
+    opacity: 0.7;
+    transform: scale(1.05);
   }
+}
 
-  
-  .landing-register-button:hover{
-    color: #333;
-    background-color: white;
-  }
+.landing-main h1 {
+  position: relative;
+  animation: slideUp 0.6s ease-out;
+}
 
-  .landing-login-button:hover{
-    color: #333;
-    background-color: white;
-  }
+.landing-main p {
+  position: relative;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  animation: slideUp 0.6s ease-out 0.1s both;
+}
+
+.landing-login-button,
+.landing-register-button {
+  position: relative;
+  background: var(--accent);
+  color: white;
+  border: 2px solid var(--accent);
+  width: 500px;
+  padding: 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+  font-size: 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-smooth),
+    background var(--transition-fast), color var(--transition-fast);
+  animation: slideUp 0.6s ease-out both;
+}
+
+.landing-login-button {
+  animation-delay: 0.2s;
+}
+
+.landing-register-button {
+  animation-delay: 0.25s;
+}
+
+.landing-login-button:hover,
+.landing-register-button:hover {
+  background: var(--accent-hover);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--accent-glow);
+}
+
+.landing-login-button:active,
+.landing-register-button:active {
+  transform: translateY(0);
+}
