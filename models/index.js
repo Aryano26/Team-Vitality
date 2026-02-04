@@ -3,4 +3,7 @@ module.exports = {
   Event: require("./Event"),
   Wallet: require("./Wallet"),
   Transaction: require("./Transaction"),
+  Expense: require("./Expense"),
+  AuthorizationRule: require("./AuthorizationRule"),
+  Settlement: require("./Settlement"),
 };

@@ -12,6 +12,10 @@ const authRouter = require("./routes/auth");
 const eventRouter = require("./routes/event");
 const walletRouter = require("./routes/wallet");
 const categoryRouter = require("./routes/category");
+const expenseRouter = require("./routes/expense");
+const authorizationRouter = require("./routes/authorization");
+const settlementRouter = require("./routes/settlement");
+const paymentRouter = require("./routes/payment");
 
 require("./config/passport");
 
@@ -26,6 +30,10 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/events", eventRouter);
 app.use("/api/v1/events/:id/wallet", walletRouter);
 app.use("/api/v1/events/:id/categories", categoryRouter);
+app.use("/api/v1/events/:id/expenses", expenseRouter);
+app.use("/api/v1/events/:id/authorization-rules", authorizationRouter);
+app.use("/api/v1/events/:id/settlement", settlementRouter);
+app.use("/api/v1/events/:id/payments", paymentRouter);
 
 const port = process.env.PORT || 3000;
 
