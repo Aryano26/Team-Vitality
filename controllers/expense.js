@@ -281,4 +281,3 @@ module.exports = {
   settleEvent,
   getEventSummary,
 };
-

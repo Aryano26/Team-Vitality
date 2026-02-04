@@ -15,4 +15,3 @@ router.post("/:id/expenses", createExpense);
 router.post("/:id/settle", settleEvent);
 
 module.exports = router;
-

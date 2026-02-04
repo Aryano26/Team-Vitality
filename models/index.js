@@ -4,4 +4,7 @@ module.exports = {
   Wallet: require("./Wallet"),
   Transaction: require("./Transaction"),
   Receipt: require("./Receipt"),
+  Expense: require("./Expense"),
+  AuthorizationRule: require("./AuthorizationRule"),
+  Settlement: require("./Settlement"),
 };

@@ -120,9 +120,38 @@ async function processExpense({ amount, currency, walletId, eventId, categoryId,
   return { success: true, finternetTxId: mockTxId };
 }
 
+/**
+ * Process a refund to a user from the shared wallet.
+ * Finternet: POST /refunds - initiates refund back to user's account.
+ * @param {Object} params
+ * @returns {{ success: boolean, finternetTxId?: string, error?: string }}
+ */
+async function processRefund({ amount, currency, userId, walletId, eventId }) {
+  if (API_BASE && API_KEY) {
+    const result = await finternetRequest("POST", "/refunds", {
+      amount: String(amount),
+      currency,
+      walletId,
+      customerId: userId,
+      metadata: { eventId, type: "settlement_refund" },
+    });
+    if (result?.ok && result?.data?.id) {
+      return { success: true, finternetTxId: result.data.id };
+    }
+    if (result && !result.ok) {
+      console.error("Finternet processRefund failed:", result.status, result.data);
+      return { success: false, error: result.data?.message || "Finternet refund failed" };
+    }
+  }
+  const mockRefundTxId = `fin_refund_${eventId}_${userId}_${Date.now()}`;
+  return { success: true, finternetTxId: mockRefundTxId };
+}
+
 module.exports = {
   createWallet,
   createPaymentIntent,
   processDeposit,
   processExpense,
+  processRefund,
 };
+
