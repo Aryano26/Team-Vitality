@@ -8,6 +8,7 @@ import "../styles/Login.css";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
 
 const API_BASE = "http://localhost:3000/api/v1";
 
@@ -16,6 +17,7 @@ const Login = () => {
   const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { refreshUser } = useAuth();
 
 
 
@@ -34,8 +36,9 @@ const Login = () => {
           `${API_BASE}/login`,
           formData
         );
-        localStorage.setItem('auth', JSON.stringify(response.data.token));
-        toast.success("Login successfull");
+        localStorage.setItem("auth", JSON.stringify(response.data.token));
+        await refreshUser();
+        toast.success("Login successful");
         navigate("/dashboard");
       } catch (err) {
         console.log(err);
@@ -53,8 +56,10 @@ const Login = () => {
     if (urlToken) {
       localStorage.setItem("auth", JSON.stringify(urlToken));
       setSearchParams({});
-      toast.success("Login successful");
-      navigate("/dashboard");
+      refreshUser().then(() => {
+        toast.success("Login successful");
+        navigate("/dashboard");
+      });
       return;
     }
     if (urlError) {
@@ -65,7 +70,7 @@ const Login = () => {
           : "Google sign-in failed. Please try again.";
       toast.error(msg);
     }
-  }, [searchParams, navigate, setSearchParams]);
+  }, [searchParams, navigate, setSearchParams, refreshUser]);
 
   useEffect(() => {
     if (token !== "") {

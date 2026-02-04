@@ -47,6 +47,19 @@ const getAllUsers = async (req, res) => {
   return res.status(200).json({ users });
 };
 
+/**
+ * Get current authenticated user (persistent user data).
+ * Used to fetch user after login for app-wide access.
+ */
+const getCurrentUser = async (req, res) => {
+  const userId = req.user.id;
+  const user = await User.findById(userId).select("-password").lean();
+  if (!user) {
+    return res.status(404).json({ msg: "User not found" });
+  }
+  return res.status(200).json({ user });
+};
+
 const register = async (req, res) => {
   let foundUser = await User.findOne({ email: req.body.email });
   if (foundUser === null) {
@@ -72,4 +85,5 @@ module.exports = {
   register,
   dashboard,
   getAllUsers,
+  getCurrentUser,
 };

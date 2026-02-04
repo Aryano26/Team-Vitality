@@ -1,7 +1,7 @@
-
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { Dashboard, HomeLayout, Landing, Login, Logout, Register } from "./pages";
-import { ToastContainer, toast } from 'react-toastify';
+import { Dashboard, HomeLayout, Landing, Login, Logout, Register, Events, EventDetail } from "./pages";
+import { ToastContainer, toast } from "react-toastify";
+import { AuthProvider } from "./context/AuthContext";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +25,14 @@ const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
+        path: "events",
+        element: <Events />,
+      },
+      {
+        path: "events/:id",
+        element: <EventDetail />,
+      },
+      {
         path: "logout",
         element: <Logout />,
       }
@@ -33,14 +41,12 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-
-
   return (
-    <>
-        <RouterProvider router={router} />
-        <ToastContainer position='top-center' />
-    </>
-  )
+    <AuthProvider>
+      <RouterProvider router={router} />
+      <ToastContainer position="top-center" />
+    </AuthProvider>
+  );
 }
 
 export default App

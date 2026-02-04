@@ -27,6 +27,11 @@ const UserSchema = new mongoose.Schema({
         minlength: 3,
         default: null
     },
+    googleId: {
+        type: String,
+        default: null,
+        sparse: true, // Allow multiple nulls; unique when set
+    },
 });
 
 UserSchema.pre("save", async function () {

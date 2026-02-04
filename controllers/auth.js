@@ -21,14 +21,20 @@ const googleCallback = async (req, res) => {
       );
     }
 
-    let user = await User.findOne({ email });
+    const orConditions = [{ email }];
+    if (googleId) orConditions.push({ googleId });
+    let user = await User.findOne({ $or: orConditions });
 
     if (!user) {
       user = await User.create({
         name: name || email.split("@")[0],
         email,
         password: null,
+        googleId: googleId || null,
       });
+    } else if (!user.googleId && googleId) {
+      user.googleId = googleId;
+      await user.save();
     }
 
     const token = jwt.sign(

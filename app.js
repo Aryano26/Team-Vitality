@@ -9,15 +9,23 @@ const passport = require("passport");
 const app = express();
 const mainRouter = require("./routes/user");
 const authRouter = require("./routes/auth");
+const eventRouter = require("./routes/event");
+const walletRouter = require("./routes/wallet");
+const categoryRouter = require("./routes/category");
 
 require("./config/passport");
 
-app.use(express.json());
 app.use(cors());
 app.use(passport.initialize());
 
+app.use("/api/v1/webhooks", require("./routes/webhook"));
+app.use(express.json());
+
 app.use("/api/v1", mainRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/events", eventRouter);
+app.use("/api/v1/events/:id/wallet", walletRouter);
+app.use("/api/v1/events/:id/categories", categoryRouter);
 
 const port = process.env.PORT || 3000;
 

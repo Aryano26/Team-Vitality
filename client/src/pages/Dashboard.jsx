@@ -39,7 +39,10 @@ const Dashboard = () => {
     <div className='dashboard-main'>
       <h1>Dashboard</h1>
       <p>Hi { data.msg }! { data.luckyNumber }</p>
-      <Link to="/logout" className="logout-button">Logout</Link>
+      <div className="dashboard-links">
+        <Link to="/events" className="logout-button">My Events</Link>
+        <Link to="/logout" className="logout-button">Logout</Link>
+      </div>
     </div>
   )
 }
