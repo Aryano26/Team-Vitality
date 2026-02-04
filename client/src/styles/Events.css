@@ -170,6 +170,17 @@
   margin-bottom: 1rem;
 }
 
+.btn-sync {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+}
+
+.btn-sync:hover {
+  background: #e5e7eb;
+}
+
 .wallet-label {
   font-size: 0.85rem;
   color: #166534;
@@ -209,6 +220,158 @@
 .deposit-form button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.event-actions-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.spend-form.deposit-form {
+  margin-top: 0.75rem;
+}
+
+.spend-form input[name="description"] {
+  max-width: 200px;
+}
+
+.wallet-locked-msg,
+.poll-result,
+.settlement-msg {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+}
+
+.event-ended-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+}
+
+.final-balance-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.final-balance-amount {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.poll-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+}
+
+.poll-box h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.poll-meta {
+  font-size: 0.85rem;
+  color: #92400e;
+  margin: 0 0 0.75rem;
+}
+
+.poll-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.poll-wait {
+  font-size: 0.9rem;
+  color: #92400e;
+  margin: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.ledger-section {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.ledger-section h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.ledger-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.ledger-summary strong {
+  color: #0f172a;
+}
+
+.ledger-note {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 1rem;
+}
+
+.ledger-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ledger-member {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.ledger-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ledger-deposited {
+  color: #15803d;
+}
+
+.ledger-ratio {
+  color: #6366f1;
+}
+
+.ledger-refund {
+  font-weight: 600;
+  color: #dc2626;
 }
 
 .categories-section {

@@ -58,10 +58,14 @@ const Events = () => {
 
     setCreating(true);
     try {
+      const startVal = form.startDateTime?.value?.trim();
+      const endVal = form.endDateTime?.value?.trim();
       const { data } = await api.post("/events", {
         name,
         type: form.type.value || "other",
         description: form.description.value?.trim() || "",
+        startDateTime: startVal || undefined,
+        endDateTime: endVal || undefined,
       });
       toast.success("Event created!");
       setShowCreateForm(false);
@@ -168,6 +172,10 @@ const Events = () => {
             placeholder="Description (optional)"
             rows={2}
           />
+          <label className="form-label">Start date & time (optional – when event starts, wallet locks and spending is allowed)</label>
+          <input type="datetime-local" name="startDateTime" />
+          <label className="form-label">End date & time (optional – after this, you can run settlement)</label>
+          <input type="datetime-local" name="endDateTime" />
           <button type="submit" disabled={creating}>
             {creating ? "Creating..." : "Create Event"}
           </button>
