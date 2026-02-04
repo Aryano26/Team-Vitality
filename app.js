@@ -28,6 +28,7 @@ app.use("/api/v1/events", eventRouter);
 app.use("/api/v1/events/:id/wallet", walletRouter);
 app.use("/api/v1/events/:id/categories", categoryRouter);
 app.use("/api/v1/events", expenseRouter);
+app.use("/api/v1/events/:eventId/settlement", require("./routes/settlement"));
 
 const port = process.env.PORT || 3000;
 

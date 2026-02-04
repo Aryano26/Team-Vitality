@@ -6,6 +6,7 @@ const {
   joinCategory,
   leaveCategory,
   updateCategory,
+  closeCategory,
   listCategories,
 } = require("../controllers/category");
 
@@ -16,5 +17,6 @@ router.post("/", createCategory);
 router.put("/:categoryId/join", joinCategory);
 router.put("/:categoryId/leave", leaveCategory);
 router.patch("/:categoryId", updateCategory);
+router.patch("/:categoryId/close", closeCategory);
 
 module.exports = router;

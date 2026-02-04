@@ -1,5 +1,7 @@
-const { Event, Wallet, Transaction, Receipt } = require("../models");
+const { Event, Wallet, Transaction, Expense, Receipt } = require("../models");
 const finternet = require("../services/finternet");
+const { validatePayment } = require("../services/ruleEngine");
+const walletService = require("../services/walletService");
 
 async function getEventForUser(eventId, userId) {
   return Event.findOne({
@@ -8,13 +10,20 @@ async function getEventForUser(eventId, userId) {
   });
 }
 
+/** Get current total spend for a category from completed expense transactions. */
+async function getCategoryCurrentSpend(eventId, categoryId) {
+  if (!categoryId) return 0;
+  const result = await Transaction.aggregate([
+    { $match: { eventId, type: "expense", status: "completed", categoryId } },
+    { $group: { _id: null, total: { $sum: "$amount" } } },
+  ]);
+  return result[0]?.total ?? 0;
+}
+
 /**
- * Create an expense paid from the shared wallet.
- * Applies simple rule-based authorization:
- * - user must be event participant
- * - if requireCategoryParticipation: must have joined the category
- * - user role must be allowedPayerRoles
- * - category / event spend limits enforced
+ * STEP 6 & 7: Rule-based payment from wallet. Validates via rule engine; if approval required
+ * creates expense as PENDING (no deduction). Otherwise executes: debit wallet, snapshot category
+ * participants on expense (lockedParticipantIds), link transaction. Wallet balance never goes negative.
  */
 const createExpense = async (req, res) => {
   const { id: eventId } = req.params;
@@ -27,86 +36,85 @@ const createExpense = async (req, res) => {
   }
 
   const event = await getEventForUser(eventId, userId);
-  if (!event) {
-    return res.status(404).json({ msg: "Event not found" });
-  }
+  if (!event) return res.status(404).json({ msg: "Event not found" });
   if (event.status !== "active") {
     return res.status(400).json({ msg: "Cannot add expenses to a non-active event" });
-  }
-
-  const participant = event.participants.find(
-    (p) => p.userId.toString() === userId.toString()
-  );
-  const userRole = participant?.role || "member";
-  const allowedRoles = event.paymentRules?.allowedPayerRoles || ["creator", "member"];
-  if (!allowedRoles.includes(userRole)) {
-    return res.status(403).json({ msg: "You are not allowed to pay from this basket" });
   }
 
   let category = null;
   if (categoryId) {
     category = event.categories.id(categoryId);
-    if (!category) {
-      return res.status(404).json({ msg: "Category not found" });
-    }
-    if (event.paymentRules?.requireCategoryParticipation) {
-      const isParticipantOfCategory = category.participantIds.some(
-        (uid) => uid.toString() === userId.toString()
-      );
-      if (!isParticipantOfCategory) {
-        return res.status(403).json({
-          msg: "You must join this category before spending from it",
-        });
-      }
-    }
+    if (!category) return res.status(404).json({ msg: "Category not found" });
   }
 
-  // Enforce simple per-category / per-event limits from rules
-  const maxPerCategory = event.paymentRules?.maxExpensePerCategory;
-  if (maxPerCategory != null && numericAmount > maxPerCategory) {
-    return res.status(400).json({
-      msg: `Expense exceeds per-category limit of ${maxPerCategory}`,
-    });
-  }
+  const wallet = await Wallet.findOne({ eventId });
+  if (!wallet) return res.status(404).json({ msg: "Wallet not found" });
 
-  let wallet = await Wallet.findOne({ eventId });
-  if (!wallet) {
-    return res.status(404).json({ msg: "Wallet not found" });
-  }
-  if (wallet.balance < numericAmount) {
-    return res.status(400).json({ msg: "Insufficient balance in shared wallet" });
-  }
-
-  // Optionally call external Finternet adapter (currently mocked for expenses)
-  const finternetResult = await finternet.processExpense({
+  const categoryCurrentSpend = await getCategoryCurrentSpend(eventId, categoryId || null);
+  const validation = validatePayment({
+    event,
+    category,
+    payerUserId: userId,
     amount: numericAmount,
-    currency: wallet.currency,
-    walletId: wallet.finternetWalletId,
-    eventId,
-    categoryId,
-    description,
+    walletBalance: wallet.balance,
+    categoryCurrentSpend,
   });
-  if (!finternetResult.success) {
-    return res.status(502).json({
-      msg: "Payment from shared wallet failed",
-      error: finternetResult.error,
+
+  if (!validation.valid) {
+    return res.status(400).json({ msg: validation.reason });
+  }
+
+  // If approval required: create expense as PENDING, do NOT deduct wallet (STEP 6).
+  if (validation.requiresApproval) {
+    const expense = await Expense.create({
+      eventId,
+      categoryId: categoryId || null,
+      amount: numericAmount,
+      currency: wallet.currency,
+      description: description || "",
+      paidBy: userId,
+      participants: [],
+      status: "pending",
+      approvalRequired: true,
+    });
+    return res.status(201).json({
+      expense,
+      message: "Expense created; approval required before payment",
     });
   }
 
-  const tx = await Transaction.create({
+  // Execute payment: snapshot participants, debit wallet, lock expense (STEP 7).
+  const snapshot =
+    category && category.participantIds && category.participantIds.length > 0
+      ? [...category.participantIds]
+      : event.participants.map((p) => p.userId);
+
+  const debitResult = await walletService.debit({
     eventId,
-    type: "expense",
     amount: numericAmount,
-    currency: wallet.currency,
     userId,
     categoryId: categoryId || null,
     description: description || "",
-    status: "completed",
-    finternetTxId: finternetResult.finternetTxId,
+    currency: wallet.currency,
   });
 
-  wallet.balance -= numericAmount;
-  await wallet.save();
+  if (!debitResult.success) {
+    return res.status(400).json({ msg: debitResult.error || "Payment failed" });
+  }
+
+  const expense = await Expense.create({
+    eventId,
+    categoryId: categoryId || null,
+    amount: numericAmount,
+    currency: wallet.currency,
+    description: description || "",
+    paidBy: userId,
+    participants: snapshot.map((uid) => ({ userId: uid, share: numericAmount / snapshot.length, paid: false })),
+    status: "paid",
+    approvalRequired: false,
+    relatedTransactionId: debitResult.transaction._id,
+    lockedParticipantIds: snapshot,
+  });
 
   let receipt = null;
   if (receiptImageUrl) {
@@ -118,73 +126,125 @@ const createExpense = async (req, res) => {
       totalAmount: numericAmount,
       currency: wallet.currency,
       description: description || "",
-      transactionId: tx._id,
+      transactionId: debitResult.transaction._id,
     });
   }
 
   return res.status(201).json({
-    transaction: tx,
+    transaction: debitResult.transaction,
     wallet: {
-      eventId: wallet.eventId,
-      balance: wallet.balance,
-      currency: wallet.currency,
+      eventId: debitResult.wallet.eventId,
+      balance: debitResult.wallet.balance,
+      currency: debitResult.wallet.currency,
     },
     receipt,
+    expense,
   });
 };
 
 /**
- * Simple event settlement:
- * - sums deposits and expenses per participant
- * - computes net = deposits - expenses
- * - saves summary on Event and marks status as "settled"
- * (no real money movement, but gives clear picture & refunds can be simulated)
+ * Approve a pending expense: deduct wallet, snapshot category participants, mark expense paid (STEP 6 approval flow).
+ */
+const approveExpense = async (req, res) => {
+  const { id: eventId, expenseId } = req.params;
+  const userId = req.user.id;
+
+  const event = await getEventForUser(eventId, userId);
+  if (!event) return res.status(404).json({ msg: "Event not found" });
+  if (event.status !== "active") return res.status(400).json({ msg: "Event is not active" });
+
+  const expense = await Expense.findOne({ _id: expenseId, eventId });
+  if (!expense) return res.status(404).json({ msg: "Expense not found" });
+  if (expense.status !== "pending") return res.status(400).json({ msg: "Expense is not pending approval" });
+
+  const category = expense.categoryId
+    ? event.categories.id(expense.categoryId)
+    : null;
+  const wallet = await Wallet.findOne({ eventId });
+  if (!wallet) return res.status(404).json({ msg: "Wallet not found" });
+
+  const categoryCurrentSpend = await getCategoryCurrentSpend(eventId, expense.categoryId || null);
+  const validation = validatePayment({
+    event,
+    category,
+    payerUserId: expense.paidBy,
+    amount: expense.amount,
+    walletBalance: wallet.balance,
+    categoryCurrentSpend,
+  });
+  if (!validation.valid) {
+    return res.status(400).json({ msg: validation.reason });
+  }
+
+  const snapshot =
+    category && category.participantIds && category.participantIds.length > 0
+      ? [...category.participantIds]
+      : event.participants.map((p) => p.userId);
+
+  const debitResult = await walletService.debit({
+    eventId,
+    amount: expense.amount,
+    userId: expense.paidBy,
+    categoryId: expense.categoryId || null,
+    description: expense.description || "",
+    currency: expense.currency || wallet.currency,
+  });
+
+  if (!debitResult.success) {
+    return res.status(400).json({ msg: debitResult.error || "Payment failed" });
+  }
+
+  expense.status = "paid";
+  expense.relatedTransactionId = debitResult.transaction._id;
+  expense.lockedParticipantIds = snapshot;
+  expense.approvedBy = userId;
+  expense.participants = snapshot.map((uid) => ({
+    userId: uid,
+    share: expense.amount / snapshot.length,
+    paid: false,
+  }));
+  await expense.save();
+
+  return res.status(200).json({
+    expense,
+    transaction: debitResult.transaction,
+    wallet: {
+      eventId: debitResult.wallet.eventId,
+      balance: debitResult.wallet.balance,
+      currency: debitResult.wallet.currency,
+    },
+  });
+};
+
+const settlementEngine = require("../services/settlementEngine");
+
+/**
+ * STEP 10: Settlement engine. Uses locked participant snapshots on expenses;
+ * fairShare = totalSpent / participantCount per expense; net = depositedAmount - fairShare.
+ * Saves summary on Event and marks status as "settled". Refunds/debits executed separately (STEP 11).
  */
 const settleEvent = async (req, res) => {
   const { id: eventId } = req.params;
   const userId = req.user.id;
 
   const event = await Event.findById(eventId).populate("participants.userId", "name email");
-  if (!event) {
-    return res.status(404).json({ msg: "Event not found" });
-  }
+  if (!event) return res.status(404).json({ msg: "Event not found" });
   if (event.createdBy.toString() !== userId.toString()) {
     return res.status(403).json({ msg: "Only the event creator can settle the event" });
   }
 
-  const txs = await Transaction.find({ eventId, status: "completed" }).lean();
+  const result = await settlementEngine.calculateSettlement(eventId);
+  if (!result) return res.status(404).json({ msg: "Event not found" });
 
-  const perUser = new Map();
-  const ensure = (uid) => {
-    if (!perUser.has(uid)) {
-      perUser.set(uid, { totalDeposits: 0, totalExpenses: 0 });
-    }
-    return perUser.get(uid);
-  };
-
-  for (const tx of txs) {
-    const uid = tx.userId.toString();
-    const agg = ensure(uid);
-    if (tx.type === "deposit") {
-      agg.totalDeposits += tx.amount;
-    } else if (tx.type === "expense") {
-      agg.totalExpenses += tx.amount;
-    }
-  }
-
-  const perParticipant = event.participants.map((p) => {
-    const uid = p.userId._id.toString();
-    const agg = perUser.get(uid) || { totalDeposits: 0, totalExpenses: 0 };
-    const net = agg.totalDeposits - agg.totalExpenses;
-    return {
-      userId: p.userId._id,
-      name: p.userId.name,
-      email: p.userId.email,
-      totalDeposits: agg.totalDeposits,
-      totalExpenses: agg.totalExpenses,
-      net,
-    };
-  });
+  const perParticipant = result.perParticipant.map((p) => ({
+    userId: p.userId,
+    name: p.name,
+    email: p.email,
+    totalDeposits: p.depositedAmount,
+    totalExpenses: p.totalExpenseShare,
+    net: p.net,
+    refundAmount: p.refundAmount,
+  }));
 
   event.status = "settled";
   event.set("settlementSummary", {
@@ -197,11 +257,14 @@ const settleEvent = async (req, res) => {
   return res.status(200).json({
     status: event.status,
     settlementSummary: event.settlementSummary,
+    totalDeposited: result.totalDeposited,
+    totalSpent: result.totalSpent,
   });
 };
 
 /**
- * Real-time visibility: return balances, per-participant totals and recent transactions.
+ * STEP 8: Real-time visibility. After any state change (deposit, expense, approval):
+ * wallet balance, category spend, and per-participant totals (depositedAmount from Event, expense share from settlement logic).
  */
 const getEventSummary = async (req, res) => {
   const { id: eventId } = req.params;
@@ -211,10 +274,7 @@ const getEventSummary = async (req, res) => {
     "participants.userId",
     "name email"
   );
-  if (!event) {
-    return res.status(404).json({ msg: "Event not found" });
-  }
-
+  if (!event) return res.status(404).json({ msg: "Event not found" });
   const wallet = await Wallet.findOne({ eventId });
   const txs = await Transaction.find({ eventId })
     .populate("userId", "name email")
@@ -222,39 +282,30 @@ const getEventSummary = async (req, res) => {
     .limit(50)
     .lean();
 
-  const perUser = new Map();
-  const ensure = (uid) => {
-    if (!perUser.has(uid)) {
-      perUser.set(uid, { totalDeposits: 0, totalExpenses: 0 });
-    }
-    return perUser.get(uid);
-  };
-
-  for (const tx of txs) {
-    const uid = tx.userId?._id?.toString();
-    if (!uid) continue;
-    const agg = ensure(uid);
-    if (tx.type === "deposit") {
-      agg.totalDeposits += tx.amount;
-    } else if (tx.type === "expense") {
-      agg.totalExpenses += tx.amount;
-    }
-  }
-
-  const participants = event.participants.map((p) => {
-    const uid = p.userId._id.toString();
-    const agg = perUser.get(uid) || { totalDeposits: 0, totalExpenses: 0 };
-    const net = agg.totalDeposits - agg.totalExpenses;
-    return {
-      userId: p.userId._id,
-      name: p.userId.name,
-      email: p.userId.email,
-      role: p.role,
-      totalDeposits: agg.totalDeposits,
-      totalExpenses: agg.totalExpenses,
-      net,
-    };
-  });
+  // Use settlement engine for consistent per-participant view (depositedAmount, fair-share expenses)
+  const settlement = await settlementEngine.calculateSettlement(eventId);
+  const roleByUserId = new Map(
+    event.participants.map((p) => [p.userId._id.toString(), p.role])
+  );
+  const participants = settlement
+    ? settlement.perParticipant.map((p) => ({
+        userId: p.userId,
+        name: p.name,
+        email: p.email,
+        role: roleByUserId.get(p.userId.toString()) || "member",
+        totalDeposits: p.depositedAmount,
+        totalExpenses: p.totalExpenseShare,
+        net: p.net,
+      }))
+    : event.participants.map((p) => ({
+        userId: p.userId._id,
+        name: p.userId.name,
+        email: p.userId.email,
+        role: p.role,
+        totalDeposits: p.depositedAmount ?? 0,
+        totalExpenses: 0,
+        net: p.depositedAmount ?? 0,
+      }));
 
   return res.status(200).json({
     event: {
@@ -276,8 +327,28 @@ const getEventSummary = async (req, res) => {
   });
 };
 
+/**
+ * List expenses for an event (pending and paid). Used by frontend for approval UI and activity.
+ */
+const listExpenses = async (req, res) => {
+  const { id: eventId } = req.params;
+  const userId = req.user.id;
+
+  const event = await getEventForUser(eventId, userId);
+  if (!event) return res.status(404).json({ msg: "Event not found" });
+
+  const expenses = await Expense.find({ eventId })
+    .populate("paidBy", "name email")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return res.status(200).json({ expenses });
+};
+
 module.exports = {
   createExpense,
+  approveExpense,
   settleEvent,
   getEventSummary,
+  listExpenses,
 };

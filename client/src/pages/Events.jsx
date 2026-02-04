@@ -56,12 +56,20 @@ const Events = () => {
       return;
     }
 
+    // New: start/end time and settlement trigger (backend supports startTime, endTime, settlementTrigger)
+    const startTime = form.startTime?.value || null;
+    const endTime = form.endTime?.value || null;
+    const settlementTrigger = form.settlementTrigger?.value || "manual";
+
     setCreating(true);
     try {
       const { data } = await api.post("/events", {
         name,
         type: form.type.value || "other",
         description: form.description.value?.trim() || "",
+        startTime: startTime || undefined,
+        endTime: endTime || undefined,
+        settlementTrigger,
       });
       toast.success("Event created!");
       setShowCreateForm(false);
@@ -168,6 +176,27 @@ const Events = () => {
             placeholder="Description (optional)"
             rows={2}
           />
+          {/* Start / End time: optional; backend uses for event window */}
+          <div className="form-row">
+            <label className="form-label">Start time (optional)</label>
+            <input type="datetime-local" name="startTime" className="form-input" />
+          </div>
+          <div className="form-row">
+            <label className="form-label">End time (optional)</label>
+            <input type="datetime-local" name="endTime" className="form-input" />
+          </div>
+          <div className="form-row">
+            <label className="form-label">Settlement trigger</label>
+            <select name="settlementTrigger">
+              <option value="manual">Manual – creator runs settlement</option>
+              <option value="auto">Auto – settlement runs when event closes</option>
+            </select>
+          </div>
+          {/* Read-only summary of default spending rules (backend-enforced) */}
+          <div className="default-rules-summary" aria-label="Default rules summary">
+            <strong>Default rules:</strong> Category participation required to pay from a category;
+            creator and members may pay. Settlement uses fair share per participant.
+          </div>
           <button type="submit" disabled={creating}>
             {creating ? "Creating..." : "Create Event"}
           </button>

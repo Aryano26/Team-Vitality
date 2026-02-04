@@ -1,5 +1,6 @@
 const { Event, Expense, Wallet, Transaction, Settlement } = require("../models");
 const finternet = require("../services/finternet");
+const settlementEngine = require("../services/settlementEngine");
 
 async function getEventForUser(eventId, userId) {
   return Event.findOne({
@@ -9,61 +10,36 @@ async function getEventForUser(eventId, userId) {
 }
 
 /**
- * Calculate settlement for all participants in an event.
- * DUMMY API ENDPOINT: GET /api/v1/events/:eventId/settlement/calculate
+ * STEP 10: Calculate settlement using fair-share engine (locked participants, depositedAmount).
+ * GET /api/v1/events/:eventId/settlement/calculate
  */
 const calculateSettlement = async (req, res) => {
   const { eventId } = req.params;
   const userId = req.user.id;
 
   const event = await getEventForUser(eventId, userId);
-  if (!event) {
-    return res.status(404).json({ msg: "Event not found" });
-  }
+  if (!event) return res.status(404).json({ msg: "Event not found" });
 
-  // Get all deposits and expenses
-  const transactions = await Transaction.find({ eventId, type: "deposit", status: "completed" });
-  const expenses = await Expense.find({ eventId, status: "approved" });
+  const result = await settlementEngine.calculateSettlement(eventId);
+  if (!result) return res.status(404).json({ msg: "Event not found" });
 
-  // Build deposits map
-  const deposits = {};
-  transactions.forEach((tx) => {
-    const userId = tx.userId.toString();
-    deposits[userId] = (deposits[userId] || 0) + tx.amount;
-  });
-
-  // Calculate per-participant spending
-  const participantSpending = {};
-  expenses.forEach((expense) => {
-    expense.participants.forEach((participant) => {
-      const userId = participant.userId.toString();
-      participantSpending[userId] = (participantSpending[userId] || 0) + participant.share;
-    });
-  });
-
-  const allParticipantIds = event.participants.map((p) => p.userId.toString());
-  const settlements = {};
-
-  allParticipantIds.forEach((participantId) => {
-    const deposited = deposits[participantId] || 0;
-    const spent = participantSpending[participantId] || 0;
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalDeposited = Object.values(deposits).reduce((sum, d) => sum + d, 0);
-
-    settlements[participantId] = {
-      participantId,
-      totalDeposited: deposited,
-      totalSpent: spent,
-      shareAmount: (spent / (totalExpenses || 1)) * totalDeposited,
-      amountOwed: deposited - spent,
-      refundAmount: Math.max(0, deposited - spent),
+  const settlement = {};
+  result.perParticipant.forEach((p) => {
+    const id = p.userId.toString();
+    settlement[id] = {
+      participantId: id,
+      totalDeposited: p.depositedAmount,
+      totalSpent: p.totalExpenseShare,
+      shareAmount: p.totalExpenseShare,
+      amountOwed: p.net,
+      refundAmount: p.refundAmount,
     };
   });
 
   return res.status(200).json({
-    settlement: settlements,
-    totalDeposited: Object.values(deposits).reduce((sum, d) => sum + d, 0),
-    totalExpenses: expenses.reduce((sum, e) => sum + e.amount, 0),
+    settlement,
+    totalDeposited: result.totalDeposited,
+    totalExpenses: result.totalSpent,
   });
 };
 
@@ -91,83 +67,58 @@ const executeSettlement = async (req, res) => {
     return res.status(400).json({ msg: "Event is not active" });
   }
 
-  // Get wallet
   const wallet = await Wallet.findOne({ eventId });
-  if (!wallet) {
-    return res.status(404).json({ msg: "Wallet not found" });
-  }
+  if (!wallet) return res.status(404).json({ msg: "Wallet not found" });
 
-  // Calculate settlements
-  const transactions = await Transaction.find({ eventId, type: "deposit", status: "completed" });
-  const expenses = await Expense.find({ eventId, status: "approved" });
+  // STEP 10/11: Use settlement engine (fair-share from locked participants, depositedAmount)
+  const result = await settlementEngine.calculateSettlement(eventId);
+  if (!result) return res.status(404).json({ msg: "Event not found" });
 
-  const deposits = {};
-  transactions.forEach((tx) => {
-    const userId = tx.userId.toString();
-    deposits[userId] = (deposits[userId] || 0) + tx.amount;
-  });
-
-  const participantSpending = {};
-  expenses.forEach((expense) => {
-    expense.participants.forEach((participant) => {
-      const userId = participant.userId.toString();
-      participantSpending[userId] = (participantSpending[userId] || 0) + participant.share;
-    });
-  });
-
-  const totalDeposited = Object.values(deposits).reduce((sum, d) => sum + d, 0);
-  const totalSpent = Object.values(participantSpending).reduce((sum, s) => sum + s, 0);
-
-  // Check wallet has enough balance
-  if (wallet.balance < totalSpent) {
+  const totalRefunds = result.perParticipant.reduce((s, p) => s + p.refundAmount, 0);
+  if (wallet.balance < totalRefunds) {
     return res.status(400).json({
       msg: "Wallet balance insufficient for settlement",
-      required: totalSpent,
+      required: totalRefunds,
       available: wallet.balance,
     });
   }
 
   const refunds = [];
-  const allParticipantIds = event.participants.map((p) => p.userId.toString());
-
-  for (const participantId of allParticipantIds) {
-    const deposited = deposits[participantId] || 0;
-    const spent = participantSpending[participantId] || 0;
-    const refundAmount = deposited - spent;
+  for (const p of result.perParticipant) {
+    const participantId = p.userId.toString();
+    const refundAmount = p.refundAmount;
 
     if (refundAmount > 0) {
-      // Create refund transaction
       const refundTx = await Transaction.create({
         eventId,
         type: "refund",
         amount: refundAmount,
-        currency: event.currency,
+        currency: event.currency || "USD",
         userId: participantId,
         status: "pending",
         description: "Settlement refund",
       });
 
-      // Create or update settlement record
-      let settlement = await Settlement.findOne({ eventId, participantId });
-      if (!settlement) {
-        settlement = await Settlement.create({
+      let settlementRecord = await Settlement.findOne({ eventId, participantId });
+      if (!settlementRecord) {
+        settlementRecord = await Settlement.create({
           eventId,
           participantId,
-          totalDeposited: deposited,
-          totalSpent: spent,
-          shareAmount: spent,
-          amountOwed: refundAmount,
+          totalDeposited: p.depositedAmount,
+          totalSpent: p.totalExpenseShare,
+          shareAmount: p.totalExpenseShare,
+          amountOwed: p.net,
           refundAmount,
           refundTransactionId: refundTx._id,
           refundStatus: "pending",
           status: "pending",
         });
       } else {
-        settlement.refundAmount = refundAmount;
-        settlement.refundStatus = "pending";
-        settlement.refundTransactionId = refundTx._id;
-        settlement.status = "pending";
-        await settlement.save();
+        settlementRecord.refundAmount = refundAmount;
+        settlementRecord.refundStatus = "pending";
+        settlementRecord.refundTransactionId = refundTx._id;
+        settlementRecord.status = "pending";
+        await settlementRecord.save();
       }
 
       refunds.push({
@@ -176,7 +127,6 @@ const executeSettlement = async (req, res) => {
         transactionId: refundTx._id,
       });
 
-      // Deduct from wallet
       wallet.balance -= refundAmount;
     }
   }

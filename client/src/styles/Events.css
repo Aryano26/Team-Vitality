@@ -206,6 +206,31 @@
   cursor: not-allowed;
 }
 
+.create-event-form .form-row {
+  margin-bottom: 0.75rem;
+}
+
+.create-event-form .form-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.create-event-form .form-input {
+  width: 100%;
+}
+
+.default-rules-summary {
+  padding: 0.75rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
 .events-list {
   display: flex;
   flex-direction: column;
@@ -276,6 +301,64 @@
   margin-top: 1rem;
 }
 
+.event-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.event-status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.event-status-active {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.event-status-closed,
+.event-status-settled,
+.event-status-ended,
+.event-status-settling {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+.event-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.stat-card {
+  padding: 0.75rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .event-detail h1 {
   margin: 0 0 0.5rem;
   color: var(--text-primary);
@@ -283,6 +366,162 @@
 
 .event-detail p {
   color: var(--text-secondary);
+}
+
+.wallet-info-message {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 1rem;
+}
+
+.expense-form-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+.expense-form-balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.expense-remaining-budget {
+  color: var(--accent-hover);
+}
+
+.approval-section {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.approval-section h3 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.approval-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.pending-expenses-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pending-expense-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pending-expense-item:last-child {
+  border-bottom: none;
+}
+
+.btn-approve {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.summary-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.summary-by-category {
+  margin-top: 1.5rem;
+}
+
+.summary-by-category h4 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.summary-category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.summary-category-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.summary-table .net-refund {
+  color: var(--success);
+}
+
+.summary-table .net-payable {
+  color: var(--danger);
+}
+
+.category-status-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.category-status-active {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.category-status-closed {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+.category-budget {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0;
+}
+
+.category-approval-hint {
+  font-size: 0.8rem;
+  color: var(--accent-hover);
+  margin: 0.25rem 0;
+}
+
+.category-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.btn-close-category {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-close-category:hover {
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .event-share-box {
@@ -725,4 +964,97 @@
 
 .settlement-section .btn-primary {
   margin-top: 0.75rem;
+}
+
+/* Settlement & Refunds section (full flow: calculate → execute → process refunds → complete) */
+.settlement-refunds-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.settlement-refunds-section h3 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.settlement-refunds-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.settlement-status-block {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.settlement-status-block p {
+  margin: 0.25rem 0;
+}
+
+.settlement-refunds-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.settlement-refund-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settlement-refund-item:last-child {
+  border-bottom: none;
+}
+
+.refund-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.refund-status-completed {
+  color: var(--success);
+}
+
+.refund-status-pending {
+  color: var(--text-muted);
+}
+
+.refund-status-failed {
+  color: var(--danger);
+}
+
+.btn-process-refund {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.settlement-calculated-block {
+  padding: 0.75rem 1rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.settlement-calculated-block h4 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.settlement-refunds-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }

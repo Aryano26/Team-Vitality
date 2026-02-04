@@ -1,4 +1,4 @@
-const { Transaction, Wallet } = require("../models");
+const { Transaction, Wallet, Event } = require("../models");
 
 /**
  * Finternet webhook: payment intent succeeded.
@@ -54,6 +54,18 @@ const finternetWebhook = async (req, res) => {
 
     wallet.balance += tx.amount;
     await wallet.save();
+
+    // STEP 5: Update participant depositedAmount for settlement
+    const event = await Event.findById(tx.eventId);
+    if (event) {
+      const participant = event.participants.find(
+        (p) => p.userId.toString() === tx.userId.toString()
+      );
+      if (participant) {
+        participant.depositedAmount = (participant.depositedAmount || 0) + tx.amount;
+        await event.save();
+      }
+    }
 
     return res.status(200).json({ received: true });
   }

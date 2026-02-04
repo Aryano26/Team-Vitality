@@ -71,6 +71,8 @@ const ExpenseSchema = new mongoose.Schema(
       ref: "Transaction",
       default: null, // Links to payment transaction from basket
     },
+    // Snapshot of category participants at expense execution time (for fair-share settlement).
+    lockedParticipantIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

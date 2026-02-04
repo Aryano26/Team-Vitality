@@ -8,11 +8,13 @@ async function getEventForUser(eventId, userId) {
 }
 
 /**
- * Create a category for an event. Only event participants can create.
+ * Create a category for an event (STEP 3: Category creation).
+ * Stores category-level rules: budgetLimit, authorizedPayers, approvalRules.
+ * Category status = ACTIVE; empty participant list (use joinCategory to add).
  */
 const createCategory = async (req, res) => {
   const { id: eventId } = req.params;
-  const { name, spendLimit } = req.body;
+  const { name, spendLimit, budgetLimit, authorizedPayers, approvalRules } = req.body;
   const userId = req.user.id;
 
   if (!name || !name.trim()) {
@@ -32,10 +34,18 @@ const createCategory = async (req, res) => {
     return res.status(400).json({ msg: "Category with this name already exists" });
   }
 
+  const limit = budgetLimit ?? spendLimit;
+  const spendLimitVal = limit != null && limit >= 0 ? Number(limit) : null;
+
   event.categories.push({
     name: name.trim(),
     participantIds: [],
-    spendLimit: spendLimit != null && spendLimit >= 0 ? Number(spendLimit) : null,
+    categoryParticipants: [],
+    spendLimit: spendLimitVal,
+    budgetLimit: spendLimitVal,
+    authorizedPayers: Array.isArray(authorizedPayers) ? authorizedPayers : [],
+    approvalRules: approvalRules || {},
+    status: "active",
   });
   await event.save();
 
@@ -44,7 +54,7 @@ const createCategory = async (req, res) => {
 };
 
 /**
- * Join a category. User must be event participant.
+ * Join a category (STEP 4: Category participation). Store categoryJoinedAt; optional categoryLeftAt when leaving.
  */
 const joinCategory = async (req, res) => {
   const { id: eventId, categoryId } = req.params;
@@ -59,13 +69,19 @@ const joinCategory = async (req, res) => {
   if (!category) {
     return res.status(404).json({ msg: "Category not found" });
   }
+  if (category.status !== "active") {
+    return res.status(400).json({ msg: "Category is closed" });
+  }
 
   const userIdStr = userId.toString();
   if (category.participantIds.some((id) => id.toString() === userIdStr)) {
     return res.status(400).json({ msg: "Already in this category" });
   }
 
+  const now = new Date();
   category.participantIds.push(userId);
+  if (!category.categoryParticipants) category.categoryParticipants = [];
+  category.categoryParticipants.push({ userId, joinedAt: now, leftAt: null });
   await event.save();
 
   return res.status(200).json({
@@ -75,7 +91,7 @@ const joinCategory = async (req, res) => {
 };
 
 /**
- * Leave a category.
+ * Leave a category. Set categoryLeftAt on participation record; remove from current participantIds.
  */
 const leaveCategory = async (req, res) => {
   const { id: eventId, categoryId } = req.params;
@@ -91,15 +107,43 @@ const leaveCategory = async (req, res) => {
     return res.status(404).json({ msg: "Category not found" });
   }
 
+  const now = new Date();
   category.participantIds = category.participantIds.filter(
     (id) => id.toString() !== userId.toString()
   );
+  if (category.categoryParticipants && category.categoryParticipants.length) {
+    const rec = category.categoryParticipants.find(
+      (p) => p.userId.toString() === userId.toString() && !p.leftAt
+    );
+    if (rec) rec.leftAt = now;
+  }
   await event.save();
 
   return res.status(200).json({
     category,
     message: "Left category",
   });
+};
+
+/**
+ * Close a category (STEP 9: Category/Event closure). Prevents new expenses in this category; triggers settlement for that category.
+ */
+const closeCategory = async (req, res) => {
+  const { id: eventId, categoryId } = req.params;
+  const userId = req.user.id;
+
+  const event = await getEventForUser(eventId, userId);
+  if (!event) return res.status(404).json({ msg: "Event not found" });
+  const isCreator = event.createdBy.toString() === userId.toString();
+  if (!isCreator) return res.status(403).json({ msg: "Only event creator can close a category" });
+
+  const category = event.categories.id(categoryId);
+  if (!category) return res.status(404).json({ msg: "Category not found" });
+
+  category.status = "closed";
+  await event.save();
+
+  return res.status(200).json({ category, message: "Category closed" });
 };
 
 /**
@@ -185,5 +229,6 @@ module.exports = {
   joinCategory,
   leaveCategory,
   updateCategory,
+  closeCategory,
   listCategories,
 };

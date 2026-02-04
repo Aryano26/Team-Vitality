@@ -1,5 +1,6 @@
 const { Event, Wallet, Transaction } = require("../models");
 const finternet = require("../services/finternet");
+const walletService = require("../services/walletService");
 
 /**
  * Ensure wallet has finternetWalletId (create via Finternet if needed).
@@ -132,25 +133,26 @@ const deposit = async (req, res) => {
     });
   }
 
-  const tx = await Transaction.create({
+  // STEP 5: Credit wallet and update participant depositedAmount (deposits are CREDITS, not expenses)
+  const creditResult = await walletService.credit({
     eventId,
-    type: "deposit",
+    userId,
     amount,
     currency: wallet.currency,
-    userId,
-    status: "completed",
     finternetTxId: finternetResult.finternetTxId,
+    description: "Deposit",
   });
 
-  wallet.balance += amount;
-  await wallet.save();
+  if (!creditResult.success) {
+    return res.status(502).json({ msg: creditResult.error || "Failed to credit wallet" });
+  }
 
   return res.status(201).json({
-    transaction: tx,
+    transaction: creditResult.transaction,
     wallet: {
-      eventId: wallet.eventId,
-      balance: wallet.balance,
-      currency: wallet.currency,
+      eventId: creditResult.wallet.eventId,
+      balance: creditResult.wallet.balance,
+      currency: creditResult.wallet.currency,
     },
   });
 };
