@@ -1,188 +1,182 @@
+.register-main {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  animation: fadeIn 0.5s ease-out;
+}
 
-.register-main{
-    display: flex;
-  }
-  
-  .register-left{
-    flex-grow: 1;
-    height: 100vh;
-    background-color: #E9E9E9;
-  
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .register-left img{
-    width: 400px;
-  }
-  
-  .register-right{
-  
-    height: 100vh;
-  
-    flex-grow: 1;
-  
-  
-  }
-  
-  .register-right-container{
-    height: 100%;
-    width: 80%;
-    margin: 0 auto;
-  
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  
-  }
-  
-  .register-right form{
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .register-logo{
-    align-self: center;
-    padding-top: 50px;
-  }
-  
-  .register-center{
-    margin: auto 0;
-  }
-  
-  .register-logo img{
-    width: 50px;
-  }
-  
-  .register-center h2{
-    font-size: 35px;
-  }
-  
-  .register-center{
-    text-align: center;
-  }
-  
-  .register-center p{
-    font-weight: 400;
-    font-size: 20px;
-    margin-bottom: 40px;
-  }
-  
-  form input[type='email'],
-  form input[type='password'],
-  form input[type='text']
-   {
-    width: 100%;
-    padding: 16px;
-    margin-bottom: 16px;
-    border: 0px;
-    border-bottom: 1px solid black;
-    outline: none;
-    box-sizing: border-box;
-  }
-  
-  .pass-input-div{
-    position: relative;
-  }
-  
-  .pass-input-div svg{
-    font-size: 20px;
-    position: absolute;
-    right: 10px;
-    bottom: 35px;
-    cursor: pointer;
-    outline: none;
-  }
-  
-  form button[type='submit'] {
-    width: 100%;
-    padding: 16px;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-  }
-  
-  
-  .register-center-options{
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  .remember-div{
-    display:flex;
-    align-items: center;
-    column-gap: 5px;
-  }
-  
-  .remember-div label{
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    margin-top: 2px;
-  }
-  
-  .forgot-pass-link{
-    text-decoration: none;
-    font-size: 13px;
-  }
-  
-  .forgot-pass-link:hover{
-    text-decoration: underline;
-  }
-  
-  .register-center-buttons{
-    margin-top: 40px;
-    display: flex;
-    flex-direction: column;
-    row-gap: 10px;
-  }
-  
-  .register-center-buttons button:nth-child(1){
-    background-color: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
-  }
-  
-  .register-center-buttons button:nth-child(1):hover{
-    color: #333;
-    background-color: white;
-  }
-  
-  .register-center-buttons button:nth-child(2){
-    background-color: #F0F0F0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    column-gap: 10px;
-    transition: background 500ms linear 0ms;
-  }
-  
-  .register-center-buttons button:nth-child(2) img{
-    width: 30px;
-  }
-  
-  .register-center-buttons button:nth-child(2):hover{
-    background: #c4c4c4c2;
-  }
-  
-  .register-bottom-p{
-    text-align: center;
-    font-size: 15px;
-    padding-bottom: 40px;
-  }
-  
-  .register-bottom-p a{
-    text-decoration: none;
-    font-weight: 600;
-  }
-  
-  .register-bottom-p a:hover{
-    text-decoration: underline;
-  }
-  
+.register-left {
+  flex-grow: 1;
+  height: 100vh;
+  background: linear-gradient(145deg, var(--bg-secondary) 0%, #1a1a24 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: 1px solid var(--border);
+}
+
+.register-left img {
+  width: 400px;
+  filter: brightness(0.95);
+  animation: fadeInUp 0.7s ease-out;
+}
+
+.register-right {
+  height: 100vh;
+  flex-grow: 1;
+  background: var(--bg-primary);
+}
+
+.register-right-container {
+  height: 100%;
+  width: 80%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.register-right form {
+  display: flex;
+  flex-direction: column;
+}
+
+.register-logo {
+  align-self: center;
+  padding-top: 50px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.register-center {
+  margin: auto 0;
+  text-align: center;
+  animation: fadeInUp 0.5s ease-out 0.2s both;
+}
+
+.register-logo img {
+  width: 50px;
+}
+
+.register-center h2 {
+  font-size: 35px;
+  color: var(--text-primary);
+}
+
+.register-center p {
+  font-weight: 400;
+  font-size: 20px;
+  margin-bottom: 40px;
+  color: var(--text-secondary);
+}
+
+.register-main form input[type='email'],
+.register-main form input[type='password'],
+.register-main form input[type='text'] {
+  width: 100%;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 0;
+  border-bottom: 2px solid var(--border);
+  outline: none;
+  box-sizing: border-box;
+  background: transparent;
+  color: var(--text-primary);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.register-main form input::placeholder {
+  color: var(--text-muted);
+}
+
+.register-main form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 2px 0 0 var(--accent);
+}
+
+.register-main .pass-input-div {
+  position: relative;
+}
+
+.register-main .pass-input-div svg {
+  font-size: 20px;
+  position: absolute;
+  right: 10px;
+  bottom: 35px;
+  cursor: pointer;
+  outline: none;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.register-main .pass-input-div svg:hover {
+  color: var(--text-primary);
+}
+
+.register-main form button[type='submit'] {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.register-center-buttons {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  row-gap: 10px;
+}
+
+.register-center-buttons button:nth-child(1) {
+  background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.register-center-buttons button:nth-child(1):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.register-center-buttons button:nth-child(2) {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  column-gap: 10px;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+}
+
+.register-center-buttons button:nth-child(2) img {
+  width: 30px;
+}
+
+.register-center-buttons button:nth-child(2):hover {
+  background: var(--border);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.login-bottom-p {
+  text-align: center;
+  font-size: 15px;
+  padding-bottom: 40px;
+  color: var(--text-secondary);
+}
+
+.login-bottom-p a {
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.login-bottom-p a:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
+}

@@ -1,10 +1,23 @@
-.logout-main{
-    font-size: 30px;
-    height: 100vh;
-    width: 100%;
+.logout-main {
+  font-size: 30px;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: linear-gradient(160deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  animation: fadeIn 0.5s ease-out;
+}
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+.logout-main h1 {
+  color: var(--text-primary);
+  animation: fadeInUp 0.5s ease-out 0.1s both;
+}
+
+.logout-main p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 0.75rem;
+  animation: fadeInUp 0.5s ease-out 0.2s both;
 }

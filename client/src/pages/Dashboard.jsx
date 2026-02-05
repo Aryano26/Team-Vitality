@@ -1,47 +1,36 @@
 import React, { useEffect, useState } from 'react'
+import { HiOutlineCalendarDays } from 'react-icons/hi2';
 import "../styles/Dashboard.css";
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 
 const Dashboard = () => {
-  const [ token, setToken ] = useState(JSON.parse(localStorage.getItem("auth")) || "");
-  const [ data, setData ] = useState({});
+  const [ token ] = useState(JSON.parse(localStorage.getItem("auth")) || "");
   const navigate = useNavigate();
 
-  const fetchLuckyNumber = async () => {
-
-    let axiosConfig = {
-      headers: {
-        'Authorization': `Bearer ${token}`
-    }
-    };
-
-    try {
-      const response = await axios.get("http://localhost:3000/api/v1/dashboard", axiosConfig);
-      setData({ msg: response.data.msg, luckyNumber: response.data.secret });
-    } catch (error) {
-      toast.error(error.message);
-    }
-  }
-
-
-  
   useEffect(() => {
-    fetchLuckyNumber();
     if(token === ""){
       navigate("/login");
       toast.warn("Please login first to access dashboard");
     }
-  }, [token]);
+  }, [token, navigate]);
 
   return (
     <div className='dashboard-main'>
-      <h1>Dashboard</h1>
-      <p>Hi { data.msg }! { data.luckyNumber }</p>
-      <div className="dashboard-links">
-        <Link to="/events" className="logout-button">My Events</Link>
-        <Link to="/logout" className="logout-button">Logout</Link>
+      <div className="dashboard-hero">
+        <div className="dashboard-hero-glow" />
+        <h1>Dashboard</h1>
+        <p className="dashboard-subtitle">Your command center</p>
+      </div>
+      <div className="dashboard-cards">
+        <Link to="/events" className="dashboard-card dashboard-card-primary">
+          <span className="dashboard-card-icon">
+            <HiOutlineCalendarDays />
+          </span>
+          <h3>My Events</h3>
+          <p>View and manage your events</p>
+          <span className="dashboard-card-arrow">→</span>
+        </Link>
       </div>
     </div>
   )

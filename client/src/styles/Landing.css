@@ -1,62 +1,86 @@
-.landing-main{
-    font-size: 30px;
-    height: 100vh;
-    width: 100%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+.landing-main {
+  font-size: 30px;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: linear-gradient(160deg, #0a0a0f 0%, #12121a 50%, #0f0f18 100%);
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.6s ease-out;
 }
 
-.landing-login-button{
-    background: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
+.landing-main::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
 
-    width: 500px;
-    padding: 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-    margin-top: 10px;
+.landing-main h1 {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+  text-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
+}
 
-    font-size: 20px;
-    text-align: center;
-    text-decoration: none;
-  }
+.landing-main p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
 
-  .landing-register-button{
-    background: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
+.landing-login-button,
+.landing-register-button {
+  background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  width: 500px;
+  padding: 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, opacity 0.2s ease;
+  animation: fadeInUp 0.6s ease-out both;
+}
 
-    width: 500px;
-    padding: 16px;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-    margin-top: 10px;
+.landing-login-button {
+  box-shadow: 0 4px 20px var(--accent-glow);
+  animation-delay: 0.3s;
+}
 
-    font-size: 20px;
-    text-align: center;
-    text-decoration: none;
-  }
+.landing-register-button {
+  margin-top: 12px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  animation-delay: 0.4s;
+}
 
-  
-  .landing-register-button:hover{
-    color: #333;
-    background-color: white;
-  }
+.landing-login-button:hover,
+.landing-register-button:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+}
 
-  .landing-login-button:hover{
-    color: #333;
-    background-color: white;
-  }
+.landing-login-button:hover {
+  box-shadow: 0 8px 30px var(--accent-glow);
+}
+
+.landing-register-button:hover {
+  background: var(--border);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}

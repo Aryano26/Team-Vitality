@@ -1,47 +1,160 @@
-.dashboard-main{
-    font-size: 30px;
-    height: 100vh;
-    width: 100%;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.dashboard-main p{
-  font-size: 20px;
-  padding: 0 20px
-}
-
-.dashboard-links {
+.dashboard-main {
+  min-height: 100vh;
+  width: 100%;
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1.5rem 4rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  animation: pageFadeIn 0.4s ease-out;
 }
 
-.logout-button{
-    background: black;
-    color: white;
-    border: 3px solid black;
-    transition: background 1s linear 0ms;
-    transition: color 500ms linear 0ms;
+.dashboard-hero {
+  position: relative;
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: slideUp 0.5s ease-out;
+}
 
-    width: 500px;
-    padding: 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    border-radius: 30px;
-    font-weight: 600;
-    margin-top: 10px;
+.dashboard-hero-glow {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 200px;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    var(--accent-glow) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
 
-    font-size: 20px;
-    text-align: center;
-    text-decoration: none;
+.dashboard-hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-subtitle {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dashboard-cards {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 420px;
+  width: 100%;
+  animation: slideUp 0.5s ease-out 0.15s both;
+}
+
+.dashboard-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.75rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text-primary);
+  overflow: hidden;
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth),
+    border-color var(--transition-fast);
+}
+
+.dashboard-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  border-color: var(--border-focus);
+}
+
+.dashboard-card:hover::before {
+  opacity: 1;
+}
+
+.dashboard-card-primary:hover {
+  box-shadow: 0 12px 40px var(--accent-glow);
+}
+
+.dashboard-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 1.5rem;
+  transition: background var(--transition-fast);
+}
+
+.dashboard-card:hover .dashboard-card-icon {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.dashboard-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-card p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.dashboard-card-arrow {
+  margin-top: auto;
+  font-size: 1.25rem;
+  color: var(--accent);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.dashboard-card:hover .dashboard-card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
   }
-
-  
-  .logout-button:hover{
-    color: #333;
-    background-color: white;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
