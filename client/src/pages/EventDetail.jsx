@@ -23,6 +23,11 @@ const EventDetail = () => {
   const [voting, setVoting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [ledger, setLedger] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [extractedReceipt, setExtractedReceipt] = useState(null);
+  const [processingReceipt, setProcessingReceipt] = useState(false);
+  const receiptInputRef = React.useRef(null);
 
   const fetchEvent = async () => {
     try {
@@ -121,6 +126,7 @@ const EventDetail = () => {
     const depositStatus = searchParams.get("deposit");
     if (depositStatus === "success") {
       setSearchParams({});
+      sessionStorage.removeItem("pendingDepositEventId");
       toast.success("Payment successful! Wallet updated.");
       // Small delay to ensure backend has processed the payment
       setTimeout(() => {
@@ -128,9 +134,17 @@ const EventDetail = () => {
       }, 500);
     } else if (depositStatus === "cancelled") {
       setSearchParams({});
+      sessionStorage.removeItem("pendingDepositEventId");
       toast.info("Payment cancelled.");
     }
   }, [searchParams]);
+
+  // Clear pending deposit event when we're on this event (so "Return to event" banner hides)
+  useEffect(() => {
+    if (id && sessionStorage.getItem("pendingDepositEventId") === id) {
+      sessionStorage.removeItem("pendingDepositEventId");
+    }
+  }, [id]);
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
@@ -195,6 +209,8 @@ const EventDetail = () => {
 
       if (data.paymentUrl) {
         toast.info("Redirecting to payment...");
+        // Remember event so we can show "Back to event" after payment redirect
+        sessionStorage.setItem("pendingDepositEventId", id);
         // Small delay to ensure transaction is saved before redirect
         setTimeout(() => {
           window.location.href = data.paymentUrl;
@@ -289,6 +305,70 @@ const EventDetail = () => {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleReceiptFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReceiptFile(file);
+    setExtractedReceipt(null);
+    setScanning(true);
+    try {
+      const formData = new FormData();
+      formData.append("receipt", file);
+      const { data } = await api.postForm(`/events/${id}/receipts/scan`, formData);
+      setExtractedReceipt({
+        amount: data.amount,
+        description: data.description || "Receipt scan",
+        suggestedCategoryId: data.suggestedCategoryId || null,
+      });
+      toast.success("Receipt scanned. Review and confirm to deduct from wallet.");
+    } catch (err) {
+      toast.error(err.response?.data?.msg || err.response?.data?.error || "Scan failed");
+      setReceiptFile(null);
+    } finally {
+      setScanning(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleConfirmReceipt = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const amount = parseFloat(form.amount?.value);
+    const description = (form.description?.value || "").trim() || "Receipt scan";
+    const categoryId = form.categoryId?.value || "";
+    if (!amount || amount <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (amount > (wallet?.balance || 0)) {
+      toast.error("Amount exceeds wallet balance");
+      return;
+    }
+    setProcessingReceipt(true);
+    try {
+      const formData = new FormData();
+      if (receiptFile) formData.append("receipt", receiptFile);
+      formData.append("amount", String(amount));
+      formData.append("description", description);
+      if (categoryId) formData.append("categoryId", categoryId);
+      const { data } = await api.postForm(`/events/${id}/receipts/process`, formData);
+      toast.success(data.message || "Receipt recorded and amount deducted.");
+      setExtractedReceipt(null);
+      setReceiptFile(null);
+      await loadAll();
+    } catch (err) {
+      toast.error(err.response?.data?.msg || err.response?.data?.error || "Failed to process receipt");
+    } finally {
+      setProcessingReceipt(false);
+    }
+  };
+
+  const handleCancelReceipt = () => {
+    setExtractedReceipt(null);
+    setReceiptFile(null);
+    if (receiptInputRef.current) receiptInputRef.current.value = "";
   };
 
   if (loading) return <div className="events-page"><p>Loading...</p></div>;
@@ -408,6 +488,73 @@ const EventDetail = () => {
                 {spending ? "Spending..." : "Spend from wallet"}
               </button>
             </form>
+          )}
+
+          {event.status === "active" && (wallet?.balance || 0) > 0 && (
+            <div className="receipt-scan-section">
+              <h4 className="receipt-scan-title">Scan receipt (deduct from wallet)</h4>
+              {!extractedReceipt ? (
+                <div className="receipt-upload-zone">
+                  <input
+                    ref={receiptInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/jpg"
+                    onChange={handleReceiptFileChange}
+                    disabled={scanning}
+                    className="receipt-file-input"
+                    id="receipt-upload"
+                  />
+                  <label htmlFor="receipt-upload" className="receipt-upload-label">
+                    {scanning ? "Scanning..." : "Choose receipt image or scan"}
+                  </label>
+                </div>
+              ) : (
+                <form className="receipt-confirm-form" onSubmit={handleConfirmReceipt}>
+                  <div className="receipt-confirm-row">
+                    <label>Amount ({wallet?.currency || "USD"})</label>
+                    <input
+                      type="number"
+                      name="amount"
+                      defaultValue={extractedReceipt.amount}
+                      min="0.01"
+                      step="0.01"
+                      max={wallet?.balance || 0}
+                      required
+                    />
+                  </div>
+                  <div className="receipt-confirm-row">
+                    <label>Description</label>
+                    <input
+                      type="text"
+                      name="description"
+                      defaultValue={extractedReceipt.description}
+                      placeholder="What was this for?"
+                    />
+                  </div>
+                  {categories.length > 0 && (
+                    <div className="receipt-confirm-row">
+                      <label>Category</label>
+                      <select name="categoryId" defaultValue={extractedReceipt.suggestedCategoryId || ""}>
+                        <option value="">None</option>
+                        {categories.map((cat) => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="receipt-confirm-actions">
+                    <button type="submit" className="btn-primary" disabled={processingReceipt}>
+                      {processingReceipt ? "Processing..." : "Confirm and deduct from wallet"}
+                    </button>
+                    <button type="button" className="btn-secondary" onClick={handleCancelReceipt}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
 
           {poll?.active && (

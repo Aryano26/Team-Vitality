@@ -19,6 +19,8 @@ export const getAuthHeaders = () => {
 export const api = {
   get: (url) => axios.get(`${API_BASE}${url}`, getAuthHeaders()),
   post: (url, data) => axios.post(`${API_BASE}${url}`, data, getAuthHeaders()),
+  postForm: (url, formData) =>
+    axios.post(`${API_BASE}${url}`, formData, getAuthHeaders()),
   put: (url, data) => axios.put(`${API_BASE}${url}`, data, getAuthHeaders()),
   delete: (url) => axios.delete(`${API_BASE}${url}`, getAuthHeaders()),
 };

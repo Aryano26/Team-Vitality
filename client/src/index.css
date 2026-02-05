@@ -60,3 +60,62 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.85; }
 }
+
+/* Return to event banner (after payment redirect) */
+.return-to-event-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: var(--success-bg);
+  border-bottom: 1px solid var(--success);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.return-to-event-text {
+  font-weight: 500;
+}
+
+.return-to-event-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.return-to-event-banner .return-to-event-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-size: 0.9rem;
+  background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+  color: white;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.return-to-event-banner .return-to-event-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.return-to-event-banner .return-to-event-dismiss {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.return-to-event-banner .return-to-event-dismiss:hover {
+  background: var(--border);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}

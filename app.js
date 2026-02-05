@@ -16,6 +16,7 @@ const expenseRouter = require("./routes/expense");
 const authorizationRouter = require("./routes/authorization");
 const settlementRouter = require("./routes/settlement");
 const paymentRouter = require("./routes/payment");
+const receiptRouter = require("./routes/receipt");
 
 require("./config/passport");
 
@@ -25,12 +26,16 @@ app.use(passport.initialize());
 app.use("/api/v1/webhooks", require("./routes/webhook"));
 app.use(express.json());
 
+// Serve uploaded receipt images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 app.use("/api/v1", mainRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/events", eventRouter);
 app.use("/api/v1/events/:id/wallet", walletRouter);
 app.use("/api/v1/events/:id/categories", categoryRouter);
 app.use("/api/v1/events/:id/expenses", expenseRouter);
+app.use("/api/v1/events/:id/receipts", receiptRouter);
 app.use("/api/v1/events/:id/authorization-rules", authorizationRouter);
 app.use("/api/v1/events/:id/settlement", settlementRouter);
 app.use("/api/v1/events/:id/payments", paymentRouter);
