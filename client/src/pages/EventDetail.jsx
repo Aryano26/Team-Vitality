@@ -121,6 +121,7 @@ const EventDetail = () => {
     const depositStatus = searchParams.get("deposit");
     if (depositStatus === "success") {
       setSearchParams({});
+      sessionStorage.removeItem("pendingDepositEventId");
       toast.success("Payment successful! Wallet updated.");
       // Small delay to ensure backend has processed the payment
       setTimeout(() => {
@@ -128,9 +129,17 @@ const EventDetail = () => {
       }, 500);
     } else if (depositStatus === "cancelled") {
       setSearchParams({});
+      sessionStorage.removeItem("pendingDepositEventId");
       toast.info("Payment cancelled.");
     }
   }, [searchParams]);
+
+  // Clear pending deposit event when we're on this event (so "Return to event" banner hides)
+  useEffect(() => {
+    if (id && sessionStorage.getItem("pendingDepositEventId") === id) {
+      sessionStorage.removeItem("pendingDepositEventId");
+    }
+  }, [id]);
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
@@ -195,6 +204,8 @@ const EventDetail = () => {
 
       if (data.paymentUrl) {
         toast.info("Redirecting to payment...");
+        // Remember event so we can show "Back to event" after payment redirect
+        sessionStorage.setItem("pendingDepositEventId", id);
         // Small delay to ensure transaction is saved before redirect
         setTimeout(() => {
           window.location.href = data.paymentUrl;
